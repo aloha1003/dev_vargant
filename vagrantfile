@@ -1,0 +1,15 @@
+SYNCED_FOLDER = "/home/vagrant/docker-env"
+PROVISION_SCRIPTS = ["provision/setup.sh" ]
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/trusty64"
+  config.vm.provider "virtualbox" do |d|
+    d.name = "pure_docker"
+  end
+  config.vagrant.plugins = ["docker", "docker-compose"]
+  config.vm.provision :docker
+  config.vm.provision :docker_compose
+  config.vm.synced_folder ".", SYNCED_FOLDER
+  for f in PROVISION_SCRIPTS
+    config.vm.provision "shell", path: f
+  end
+end

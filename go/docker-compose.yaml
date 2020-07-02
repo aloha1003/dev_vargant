@@ -1,0 +1,10 @@
+version: "2"
+services:
+  app:
+    environment:
+      - GO111MODULE=on
+    build: .
+    volumes:
+      - ./projects/:/go/src/cd.codes
+
+    working_dir: /go/src/cd.codes
