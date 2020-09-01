@@ -1,10 +1,40 @@
-version: "2"
+version: "3.7"
 services:
-  app:
+  db:
+    image: percona/percona-server:5.7
     environment:
-      - GO111MODULE=on
-    build: .
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: slot
+      MYSQL_PASSWORD: slotpassword
+      MYSQL_DATABASE: slot
+    ports:
+      - 3306:3306
     volumes:
-      - ./projects/:/go/src/cd.codes
-
-    working_dir: /go/src/cd.codes
+      - mysqldata:/var/lib/mysql
+  app:
+    hostname: my-app-development
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+    environment: 
+      SERVING_PORT: "8081"  # Example ENV variable
+      GO111MODULE: "on"
+      DB_HOST: mysql
+      DB_DATABASE: slot
+      DB_USERNAME: slot
+      DB_PASSWORD: slotpassword
+      GIN_MODE: "release"
+    volumes:
+      - ./projects/slot_api:/go/src/codes
+      - go_pkg:/go/pkg
+      - go_bin:/go/bin
+    working_dir: /go/src/codes
+    ports:
+      - "8081:8081"
+    command: bash -c "make serve"
+volumes:
+  mysqldata:
+  go_pkg:
+  go_bin:
