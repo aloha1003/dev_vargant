@@ -19,4 +19,6 @@ WORKDIR /root/fswatch-1.14.0
 RUN ./configure
 RUN make
 RUN make install
+# Install swag doc generate
+RUN go get -u github.com/swaggo/swag/cmd/swag
 WORKDIR /go/src/codes

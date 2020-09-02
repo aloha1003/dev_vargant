@@ -11,9 +11,11 @@ services:
       - 3306:3306
     volumes:
       - mysqldata:/var/lib/mysql
+    labels:
+      - "traefik.enable=false"
   app:
     hostname: my-app-development
-    restart: unless-stopped
+    restart: always
     build:
       context: .
       dockerfile: Dockerfile
@@ -25,16 +27,63 @@ services:
       DB_DATABASE: slot
       DB_USERNAME: slot
       DB_PASSWORD: slotpassword
-      GIN_MODE: "release"
+      GIN_MODE: "debug"
     volumes:
       - ./projects/slot_api:/go/src/codes
       - go_pkg:/go/pkg
       - go_bin:/go/bin
     working_dir: /go/src/codes
-    ports:
-      - "8081:8081"
+    networks:
+      - web
     command: bash -c "make serve"
+    #command: bash -c "go run main.go"
+    expose:
+      - "8081"
+    labels:
+      - "traefik.docker.network=web"
+      - "traefik.enable=true"
+      - "traefik.basic.frontend.rule=Host:codes.slotapi"
+      - "traefik.http.routers.app.rule=Host(`codes.slotapi`)"
+      - "traefik.basic.port=8081"
+      - "traefik.basic.protocol=http"
+      - "traefik.http.middlewares.cors.headers.addvaryheader=true"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,OPTION"
+      - "traefik.http.middlewares.cors.headers.accesscontrolalloworigin=*"
+      - "traefik.http.routers.app.middlewares=cors@docker"
+  traefik:
+    image: traefik:v2.0
+    networks:
+      - web
+    command: 
+      # - '--api.entrypoint=api'
+      - '--api.insecure=true'
+      - '--api'
+      - '--providers.docker=true'
+      # - '--providers.docker.exposedbydefault=false'
+      - '--providers.docker.watch=true'
+      - '--entrypoints.api=true'
+      - '--entrypoints.http=true'
+      - '--entrypoints.http.address=:80'
+      - '--entrypoints.api.address=:8081'
+      - '--log=true'
+      - '--log.level=DEBUG'
+      - '--log.filepath=/var/log/traefik.log'
+    labels:
+       - 'traefik.port=8081'
+    ports:
+      # The HTTP port
+      - "80:80"
+      - "8081:8081"
+      # The Web UI (enabled by --api.insecure=true)
+      - "8080:8080"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      # 當掛載docker.sock時可以讓容器監聽主機上所有docker的容器事件
+      - /var/run/docker.sock:/var/run/docker.sock
 volumes:
   mysqldata:
   go_pkg:
   go_bin:
+networks:
+  web:
+    external: true
