@@ -13,6 +13,8 @@ services:
       - mysqldata:/var/lib/mysql
     labels:
       - "traefik.enable=false"
+    networks:
+      - backend
   app:
     hostname: my-app-development
     restart: always
@@ -23,10 +25,12 @@ services:
     environment: 
       SERVING_PORT: "8081"  # Example ENV variable
       GO111MODULE: "on"
-      DB_HOST: mysql
+      DB_HOST: db
       DB_DATABASE: slot
-      DB_USERNAME: slot
-      DB_PASSWORD: slotpassword
+      DB_USERNAME: root
+      DB_PORT: 3306
+      DB_PASSWORD: secret
+      DB_ENGINE: "mysql"
       GIN_MODE: "debug"
     volumes:
       - ./projects/slot_api:/go/src/codes
@@ -35,6 +39,7 @@ services:
     working_dir: /go/src/codes
     networks:
       - web
+      - backend
     command: bash -c "make serve"
     #command: bash -c "go run main.go"
     expose:
@@ -50,6 +55,8 @@ services:
       - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,OPTION"
       - "traefik.http.middlewares.cors.headers.accesscontrolalloworigin=*"
       - "traefik.http.routers.app.middlewares=cors@docker"
+    depends_on:
+        - "traefik"
   traefik:
     image: traefik:v2.0
     networks:
@@ -85,5 +92,6 @@ volumes:
   go_pkg:
   go_bin:
 networks:
+  backend:
   web:
     external: true
