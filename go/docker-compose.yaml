@@ -54,6 +54,7 @@ services:
       - "traefik.http.middlewares.cors.headers.addvaryheader=true"
       - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,OPTION"
       - "traefik.http.middlewares.cors.headers.accesscontrolalloworigin=*"
+      - "traefik.http.middlewares.cors.headers.accesscontrolallowheaders=*"
       - "traefik.http.routers.app.middlewares=cors@docker"
     depends_on:
         - "traefik"
